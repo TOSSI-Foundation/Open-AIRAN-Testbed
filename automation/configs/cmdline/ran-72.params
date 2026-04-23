@@ -1,0 +1,11 @@
+vfio-pci.enable_sriov=1 vfio-pci.disable_idle_d3=1
+intel_iommu=on iommu=pt
+
+default_hugepagesz=1G hugepagesz=1G hugepages=${HP_1G} hugepagesz=2M hugepages=${HP_2M}
+
+isolcpus=managed_irq,domain,${ISOL_CPUS} nohz_full=${ISOL_CPUS} rcu_nocbs=${ISOL_CPUS}
+kthread_cpus=${HK_CPUS} irqaffinity=${HK_CPUS} rcu_nocb_poll
+
+idle=poll intel_pstate=disable mitigations=off mce=off
+nmi_watchdog=0 softlockup_panic=0 nosoftlockup audit=0 selinux=0 enforcing=0
+skew_tick=1 tsc=nowatchdog

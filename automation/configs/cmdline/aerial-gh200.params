@@ -1,0 +1,7 @@
+pci=realloc=off pci=pcie_bus_safe
+default_hugepagesz=512M hugepagesz=512M hugepages=${HP_512M}
+tsc=reliable processor.max_cstate=0 audit=0 idle=poll rcu_nocb_poll nosoftlockup
+irqaffinity=0
+isolcpus=managed_irq,domain,${ISOL_CPUS} nohz_full=${ISOL_CPUS} rcu_nocbs=${ISOL_CPUS}
+earlycon module_blacklist=nouveau acpi_power_meter.force_cap_on=y
+numa_balancing=disable init_on_alloc=0 preempt=none

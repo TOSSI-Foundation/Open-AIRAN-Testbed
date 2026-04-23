@@ -1,0 +1,7 @@
+pci=realloc=off
+default_hugepagesz=1G hugepagesz=1G hugepages=${HP_1G}
+tsc=reliable processor.max_cstate=0 audit=0 idle=poll rcu_nocb_poll nosoftlockup
+irqaffinity=${HK_CPUS} kthread_cpus=${HK_CPUS}
+isolcpus=managed_irq,domain,${ISOL_CPUS} nohz_full=${ISOL_CPUS} rcu_nocbs=${ISOL_CPUS}
+earlycon module_blacklist=nouveau acpi_power_meter.force_cap_on=y
+init_on_alloc=0 preempt=none
