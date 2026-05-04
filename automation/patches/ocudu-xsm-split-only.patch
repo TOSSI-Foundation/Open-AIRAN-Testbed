@@ -1,0 +1,33 @@
+diff --git a/apps/du/CMakeLists.txt b/apps/du/CMakeLists.txt
+index 1ff0128897..c23550e01a 100644
+--- a/apps/du/CMakeLists.txt
++++ b/apps/du/CMakeLists.txt
+@@ -59,15 +59,23 @@ foreach (NAME LIB IN ZIP_LISTS EXTENSIONS LIBRARIES)
+     notify_binary_target(${TARGET})
+ endforeach ()
+ 
+-add_library(fapi_xsm_transport STATIC
+-        fapi_xsm_transport.cpp
++# fapi_stats* are needed by every binary (gnb included) for the fapi_stats
++# symbols; only the xSM transport itself belongs to the FAPI split (PNF/VNF).
++# Compiling and linking it unconditionally forced DPDK/rte_eal.h on monolithic
++# builds, and ENABLE_XSM_FAPI_SPLIT=OFF then failed at link on
++# -locudu_xsm_context because the root CMakeLists only defines that target
++# when the option is ON.
++set(FAPI_XSM_TRANSPORT_SRCS
+         fapi_stats.cpp
+         fapi_stats_serializers.cpp)
++if(ENABLE_XSM_FAPI_SPLIT)
++    list(APPEND FAPI_XSM_TRANSPORT_SRCS fapi_xsm_transport.cpp)
++endif()
++add_library(fapi_xsm_transport STATIC ${FAPI_XSM_TRANSPORT_SRCS})
+ target_include_directories(fapi_xsm_transport PUBLIC ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+-target_link_libraries(fapi_xsm_transport PUBLIC
+-        ocudu_xsm_context
+-        ocudu_fapi_serialization)
++target_link_libraries(fapi_xsm_transport PUBLIC ocudu_fapi_serialization)
+ if(ENABLE_XSM_FAPI_SPLIT)
++    target_link_libraries(fapi_xsm_transport PUBLIC ocudu_xsm_context)
+     target_compile_definitions(fapi_xsm_transport PRIVATE ENABLE_XSM_FAPI_SPLIT)
+ endif()
+ 
