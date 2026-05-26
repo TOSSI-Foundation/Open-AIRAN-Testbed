@@ -1,0 +1,7 @@
+ml_mcs:
+  inference:
+    enabled: false
+  dataset_logging:
+    enabled: true
+    output_dir: ml/datasets
+    scenario: collect

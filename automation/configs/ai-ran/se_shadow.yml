@@ -1,0 +1,4 @@
+se_ml:
+  inference:
+    enabled: true
+    model_path: ml/models/se_ml.model

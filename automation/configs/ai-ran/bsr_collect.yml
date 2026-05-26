@@ -1,0 +1,13 @@
+bsr_ml:
+  inference:
+    enabled: false
+  actuation:
+    enabled: false
+  dataset_logging:
+    enabled: true
+    output_dir: ml/datasets
+    scenario: zmq_sim
+cell_cfg:
+  mac_cell_group:
+    bsr_cfg:
+      periodic_bsr_timer: 40

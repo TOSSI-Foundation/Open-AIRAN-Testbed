@@ -1,0 +1,4 @@
+ml_mcs:
+  inference:
+    enabled: true
+    model_path: ml/models/site_a.trained.model

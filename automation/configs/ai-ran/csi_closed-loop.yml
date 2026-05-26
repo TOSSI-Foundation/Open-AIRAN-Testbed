@@ -1,0 +1,6 @@
+csi_ml:
+  inference:
+    enabled: true
+    model_type: gru
+    gru_model_path: ml/models/csi_gru.trained.model
+    apply_to_mcs: true

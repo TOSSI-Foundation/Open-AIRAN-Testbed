@@ -1,0 +1,6 @@
+bsr_ml:
+  inference:
+    enabled: true
+    model_path: ml/models/bsr_periodicity.trained.model
+  actuation:
+    enabled: false

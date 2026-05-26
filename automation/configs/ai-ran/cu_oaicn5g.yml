@@ -1,0 +1,14 @@
+cu_cp:
+  amf:
+    addrs: 192.168.70.132
+    bind_addrs: 192.168.70.129
+    supported_tracking_areas:
+      - tac: 1
+        plmn_list:
+          - plmn: "00101"
+            tai_slice_support_list:
+              - sst: 1
+cu_up:
+  ngu:
+    socket:
+      - bind_addr: 192.168.70.129

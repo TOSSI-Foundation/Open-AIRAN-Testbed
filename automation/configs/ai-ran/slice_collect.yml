@@ -1,0 +1,14 @@
+cell_cfg:
+  slicing:
+    - sst: 1
+      sd: 1
+    - sst: 2
+      sd: 1
+slice_ml:
+  dataset_logging:
+    enabled: true
+    output_dir: ml/datasets/slice_datasets
+    scenario: collect
+  inference:
+    enabled: false
+    apply: false

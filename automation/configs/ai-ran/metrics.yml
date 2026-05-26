@@ -1,0 +1,4 @@
+metrics:
+  enable_log: true
+  layers:
+    enable_sched: true

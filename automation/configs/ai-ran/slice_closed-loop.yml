@@ -1,0 +1,10 @@
+slice_ml:
+  inference:
+    enabled: true
+    model_path: ml/slicemanager/slicemanager_actor.trained.model
+    apply: true
+    plmn: "00101"
+    embb_sst: 1
+    embb_sd: 1
+    urllc_sst: 2
+    urllc_sd: 1
