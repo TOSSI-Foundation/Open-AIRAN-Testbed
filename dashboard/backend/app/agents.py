@@ -613,9 +613,10 @@ def _shell_preview(a) -> str:
 
 
 _CORE_SH = r"""
-. "$AUTO/lib/includes.sh"; load_stack; core_settings
+. "$AUTO/lib/includes.sh"; load_stack; ue_settings
 h="$(host_of core5g)"
-for v in CORE CORE_CFG_MODE CORE_AMF_ADDR CORE_UPF_ADDR CORE_PLMN CORE_TAC CORE_SST CORE_SD; do printf '%s=%s\n' "$v" "${!v:-}"; done
+for v in CORE CORE_CFG_MODE CORE_AMF_ADDR CORE_UPF_ADDR CORE_PLMN CORE_TAC CORE_SST CORE_SD \
+         UE_IMSI_BASE UE_KEY UE_OPC UE_DNN UE_SST UE_SD; do printf '%s=%s\n' "$v" "${!v:-}"; done
 printf 'HOST=%s\nCOMPOSE=%s\nWORKSPACE=%s\nRUNDIR=%s\n' "$h" "${CORE_COMPOSE:-$WORKSPACE/oai-cn5g/docker-compose.yaml}" "$WORKSPACE" "$RUNDIR"
 printf 'N2_SRC=%s\nN3_SRC=%s\n' "$(src_toward "$CORE_AMF_ADDR")" "$(src_toward "$CORE_UPF_ADDR")"
 """
@@ -898,10 +899,19 @@ By symptom:
   sctp kernel module missing (modprobe sctp). Connect OK but no NG Setup Response -> look at the AMF log.
 - NG Setup Failure "unknown PLMN"/"unsupported TA": the gNB's PLMN/TAC/slice are not served by the AMF.
   Make CORE_PLMN/CORE_TAC/CORE_SST/CORE_SD match the core, or add them to the core's config.
+- The UE's identity and slice are stack settings: UE_IMSI_BASE (first UE's 15-digit IMSI), UE_KEY, UE_OPC,
+  UE_DNN, UE_SST, UE_SD (hex, like CORE_SD), set in Deployments -> Configs -> UE or with save_settings. Unset,
+  they follow CORE (automation/lib/includes.sh ue_settings): oai-cn5g 001010000000001 / OAI tutorial K and
+  OPc / DNN oai / no SD; sd-core 001010100000001 / Aether K and OPc / DNN internet / SD = CORE_SD (010203);
+  external has no defaults. SST and SD default to the CU's CORE_SST/CORE_SD so UE and cell agree. OAI CN5G
+  takes no SD: it is dropped for CORE=oai-cn5g. Save a UE_* key only to differ from that default, so a later
+  CORE change still carries the UE with it. core_diag reports the effective UE_* values next to the CORE_* ones.
+  Used by the nue (run_nue.sh) and oai-nrue (with a UE_CFG) components; UE_ARGS containing uicc0 overrides.
 - UE registration rejected: "authentication failure"/MAC failure -> K/OPc differ from the core's subscriber;
   "UE identity cannot be derived"/not found -> IMSI not provisioned (or wrong PLMN in the IMSI); "no network
   slices available"/"DNN not supported" -> the UE asks for a slice/DNN the core does not give it
-  (SD-Core default DNN internet, slice 1/010203; OAI CN5G tutorial DNN oai, slice 1).
+  (SD-Core default DNN internet, slice 1/010203; OAI CN5G tutorial DNN oai, slice 1). "PDU session ... mismatch
+  for allowed NSSAI" -> UE_SST/UE_SD differ from the slice the core allows that subscriber.
 - PDU session up but no traffic: N3 path. core_diag route_to_upf_n3: the CU-UP must reach the UPF's N3
   address (SD-Core 192.168.252.x access subnet by default, routed via the core node; OAI CN5G the UPF
   container). Then the UPF's N6/NAT to the data network, and MTU (GTP-U overhead).

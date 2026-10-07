@@ -20,9 +20,11 @@ configure)
 start)
     need_bin "$BIN" "$BIN not built -- run make build STACK=$STACK"
     [ -n "$UE_CONF" ] || die "$STACK.conf sets no UE_CFG"
-    if [ "${CORE:-oai-cn5g}" = sd-core ] && [[ "${UE_ARGS:-}" != *uicc0* ]]; then
-        UE_ARGS="${UE_ARGS:-} --uicc0.imsi 001010100007500 --uicc0.key 5122250214c33e723a5dd523fc145fc0"
-        UE_ARGS="$UE_ARGS --uicc0.opc 981d464c7c52eb6e5036234984ad0bcf --uicc0.dnn internet --uicc0.nssai_sst 1 --uicc0.nssai_sd 66051"
+    ue_settings
+    if [[ "${UE_ARGS:-}" != *uicc0* ]] && [ -n "$UE_IMSI_BASE" ]; then
+        UE_ARGS="${UE_ARGS:-} --uicc0.imsi $UE_IMSI_BASE --uicc0.key $UE_KEY --uicc0.opc $UE_OPC"
+        UE_ARGS="$UE_ARGS --uicc0.pdu_sessions.[0].dnn $UE_DNN --uicc0.nssai_sst $UE_SST --uicc0.pdu_sessions.[0].nssai_sst $UE_SST"
+        [ -n "$UE_SD" ] && UE_ARGS="$UE_ARGS --uicc0.nssai_sd $((16#$UE_SD)) --uicc0.pdu_sessions.[0].nssai_sd $((16#$UE_SD))"
     fi
     tmux_start oai-nrue "cd '$WORKSPACE/uerun' && sudo '$BIN' -O '$UE_CONF' ${UE_ARGS:-}"
     log "pane '$(basename "$0" .sh)' in tmux session '$(session)' -- make attach STACK=$STACK"

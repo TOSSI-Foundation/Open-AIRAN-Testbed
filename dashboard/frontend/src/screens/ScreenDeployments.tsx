@@ -522,7 +522,7 @@ interface CfgFile { given: string; path: string; exists: boolean; editable: bool
 interface Slot { key: string; label: string; value: string; files: CfgFile[]; pick: boolean }
 interface Source { repo: string; branch: string; upstream: string; upstream_exists: boolean; using: string }
 type CfgData = { slots: Slot[]; knobs: Knob[]; settings: Record<string, string>; file: string; source: Source | null; choices: string[]
-  core: CoreInfo | null }
+  core: CoreInfo | null; ue: { defaults: Record<string, Record<string, string>> } | null }
 const knobWhen = (k: Knob) => k.label.match(/\((\w+)=([\w-]+)\)/)
 interface Knob { key: string; label: string; help: string; choices: string[]; value: string }
 
@@ -539,7 +539,7 @@ function Configs({ stack, components, onSaved }: { stack: string; components: st
   const load = useCallback(() => api<CfgData>(`/stacks/${stack}/configs`)
     .then((r) => {
       setData(r); setDraft({})
-      const known = new Set([...r.knobs.map((k) => k.key), ...r.slots.map((x) => x.key), ...components.map(hostKey), 'OCUDU_TREE', 'OCUDU_PREBUILT', ...CORE_FIELDS.map((f) => f.key), 'CORE', 'CORE_CFG_MODE'])
+      const known = new Set([...r.knobs.map((k) => k.key), ...r.slots.map((x) => x.key), ...components.map(hostKey), 'OCUDU_TREE', 'OCUDU_PREBUILT', ...CORE_FIELDS.map((f) => f.key), 'CORE', 'CORE_CFG_MODE', ...UE_FIELDS.map((f) => f.key)])
       setRows(Object.entries(r.settings).filter(([k]) => !known.has(k)).map(([k, v]) => ({ k, v })))
     }).catch((e) => setMsg({ ok: false, text: String((e as Error).message) })), [stack, components.join(' ')]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setMsg(null); load() }, [load])
@@ -614,6 +614,8 @@ function Configs({ stack, components, onSaved }: { stack: string; components: st
       </div>
 
       {data.core && <CorePicker core={data.core} settings={data.settings} onSave={save} />}
+      {data.ue && <UePicker defaults={data.ue.defaults[data.settings.CORE || data.core?.value || 'oai-cn5g'] ?? {}}
+        noSd={(data.settings.CORE || data.core?.value || 'oai-cn5g') === 'oai-cn5g'} settings={data.settings} onSave={save} />}
       {data.source && <SourcePicker source={data.source} settings={data.settings} onSave={save} />}
 
       <div style={{ border: `1px solid ${C.line}`, borderRadius: 12, padding: '12px 14px', background: C.card }}>
@@ -781,6 +783,46 @@ function CorePicker({ core, settings, onSave }: { core: CoreInfo; settings: Reco
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+const UE_FIELDS = [
+  { key: 'UE_IMSI_BASE', label: 'IMSI base', w: 170 }, { key: 'UE_KEY', label: 'Key', w: 290 }, { key: 'UE_OPC', label: 'OPc', w: 290 },
+  { key: 'UE_DNN', label: 'DNN', w: 110 }, { key: 'UE_SST', label: 'SST', w: 60 }, { key: 'UE_SD', label: 'SD (hex)', w: 90 },
+]
+
+function UePicker({ defaults, noSd, settings, onSave }: { defaults: Record<string, string>; noSd: boolean
+  settings: Record<string, string>; onSave: (p: Record<string, string>) => void }) {
+  const fields = UE_FIELDS.filter((x) => !(noSd && x.key === 'UE_SD'))
+  const saved = Object.fromEntries(UE_FIELDS.map((x) => [x.key, settings[x.key] || defaults[x.key] || '']))
+  const [f, setF] = useState(saved)
+  useEffect(() => setF(saved), [JSON.stringify(saved)]) // eslint-disable-line react-hooks/exhaustive-deps
+  const dirty = fields.some((x) => f[x.key] !== saved[x.key])
+  const save = () => onSave(Object.fromEntries(UE_FIELDS.map((x) => {
+    const v = (f[x.key] ?? '').trim()
+    return [x.key, v === (defaults[x.key] || '') || (noSd && x.key === 'UE_SD') ? '' : v]
+  })))
+  return (
+    <div style={{ border: `1px solid ${C.line}`, borderRadius: 12, padding: '14px 16px', background: C.card }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontWeight: 800, fontSize: 14 }}>UE</span>
+        {dirty && (
+          <span style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            <Btn onClick={() => setF(saved)}>Discard</Btn>
+            <Btn primary onClick={save}>Save</Btn>
+          </span>
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        {fields.map((x) => (
+          <label key={x.key} style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, color: C.mut, fontWeight: 700 }}>
+            {x.label}
+            <input value={f[x.key] ?? ''} onChange={(e) => setF({ ...f, [x.key]: e.target.value })}
+              placeholder={x.key === 'UE_SD' ? 'none' : ''} style={{ ...inputStyle(x.w), fontFamily: font.mono }} />
+          </label>
+        ))}
+      </div>
     </div>
   )
 }

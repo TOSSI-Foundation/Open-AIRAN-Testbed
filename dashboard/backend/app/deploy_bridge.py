@@ -496,7 +496,10 @@ BUILD_KEYS = ("OCUDU_SRC_DIR", "OCUDU_BUILD_DIR", "CMAKE_OPTS", "OCUDU_TARGETS",
 
 
 CORE_KEYS = {"CORE": r"oai-cn5g|sd-core|external", "CORE_CFG_MODE": r"default|custom|files", "CORE_AMF_ADDR": r"[A-Za-z0-9.:-]{1,253}",
-             "CORE_PLMN": r"\d{5,6}", "CORE_TAC": r"\d{1,8}", "CORE_SST": r"\d{1,3}", "CORE_SD": r"[0-9A-Fa-f]{6}"}
+             "CORE_PLMN": r"\d{5,6}", "CORE_TAC": r"\d{1,8}", "CORE_SST": r"\d{1,3}", "CORE_SD": r"[0-9A-Fa-f]{6}",
+             "UE_IMSI_BASE": r"\d{15}", "UE_KEY": r"[0-9A-Fa-f]{32}", "UE_OPC": r"[0-9A-Fa-f]{32}",
+             "UE_DNN": r"[A-Za-z0-9.-]{1,63}", "UE_SST": r"\d{1,3}", "UE_SD": r"[0-9A-Fa-f]{6}"}
+UE_FIELDS = ("UE_IMSI_BASE", "UE_KEY", "UE_OPC", "UE_DNN", "UE_SST", "UE_SD")
 
 
 _CORE_DEFAULTS = r"""
@@ -506,6 +509,30 @@ for k in oai-cn5g sd-core; do
       printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$k" "$CORE_AMF_ADDR" "$CORE_PLMN" "$CORE_TAC" "$CORE_SST" "$CORE_SD" )
 done
 """
+
+
+_UE_DEFAULTS = r"""
+. "$AUTO/lib/includes.sh"; load_stack
+for k in oai-cn5g sd-core external; do
+    ( CORE=$k; unset UE_IMSI_BASE UE_KEY UE_OPC UE_DNN UE_SST UE_SD; ue_settings
+      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$k" "$UE_IMSI_BASE" "$UE_KEY" "$UE_OPC" "$UE_DNN" "$UE_SST" "$UE_SD" )
+done
+"""
+
+
+def ue_defaults(stack: str) -> dict:
+    r = subprocess.run(["bash", "-c", _UE_DEFAULTS], env={**os.environ, "STACK": stack, "AUTO": str(AUTO)},
+                       capture_output=True, text=True, timeout=20)
+    out = {}
+    for line in r.stdout.splitlines():
+        k, *v = (line.split("\t") + [""] * 7)[:7]
+        out[k] = dict(zip(UE_FIELDS, v))
+    return out
+
+
+def has_ue(env: dict) -> bool:
+    comps = env.get("COMPONENTS", "").split()
+    return "nue" in comps or ("oai-nrue" in comps and bool(env.get("UE_CFG")))
 
 
 def core_defaults(stack: str) -> dict:
@@ -604,7 +631,8 @@ def stack_configs(stack: str):
         kind = saved.get("CORE") or env.get("CORE") or "oai-cn5g"
         core = {"value": kind, "fixed": stack.startswith("core-"), "defaults": core_defaults(stack),
                 "mode": saved.get("CORE_CFG_MODE") or ("custom" if kind == "external" else "default")}
-    return {"stack": stack, "slots": stack_files(stack, env), "knobs": ks, "settings": saved, "core": core,
+    ue = {"defaults": ue_defaults(stack)} if has_ue(env) else None
+    return {"stack": stack, "slots": stack_files(stack, env), "knobs": ks, "settings": saved, "core": core, "ue": ue,
             "choices": config_choices(stack, env),
             "file": str(OVR_DIR / f"{stack}.env"), "source": ocudu_source(env)}
 

@@ -54,7 +54,12 @@ load_stack() {
     local conf="$ROOT/stacks/$STACK.conf"
     [ -f "$conf" ] || { echo "no such stack '$STACK'. available:"; list_stacks; exit 2; }
     COMPONENTS=""; START_ORDER=""; NEEDS=""; CMAKE_OPTS=""; HOSTS="local"; HEALTH=""
-    local ovr="$VARDIR/overrides/$STACK.env" keep="" k
+    local ovr="$VARDIR/overrides/$STACK.env" keep="" k top
+    top="$(dirname "$ROOT")"
+    if [ -f "$ovr" ] && [ -n "${TOSSI_PRIMARY_TOP:-}" ] && [ "$TOSSI_PRIMARY_TOP" != "$top" ]; then
+        sed "s|$TOSSI_PRIMARY_TOP/|$top/|g" "$ovr" > "$VARDIR/overrides/.$STACK.here.env"
+        ovr="$VARDIR/overrides/.$STACK.here.env"
+    fi
     if [ -f "$ovr" ]; then
         for k in $(grep -oE '^[A-Z][A-Z0-9_]*=' "$ovr" | tr -d =); do
             [ -n "${!k:-}" ] && keep+="$(printf '%s=%q; ' "$k" "${!k}")"
@@ -108,15 +113,16 @@ host_of() {
 remote_repo() { echo "${REMOTE_REPO:-tossi-automation}"; }
 remote_sync() {
     local h="$1" r; r="$(remote_repo)"
-    rssh "$h" "mkdir -p '$r/var/overrides'" || { bad "cannot ssh to $h"; return 1; }
+    rssh "$h" "mkdir -p '$r/var/overrides' '$r/var/configs/$STACK'" || { bad "cannot ssh to $h"; return 1; }
     local e="$TOSSI_SSH${SSH_P:+ -p $SSH_P}"
     rsync -a --delete -e "$e" "$ROOT/" "$SSH_H:$r/automation/" || return 1
     [ -f "$VARDIR/overrides/$STACK.env" ] && rsync -a -e "$e" "$VARDIR/overrides/$STACK.env" "$SSH_H:$r/var/overrides/"
+    [ -d "$VARDIR/configs/$STACK" ] && rsync -a -e "$e" "$VARDIR/configs/$STACK/" "$SSH_H:$r/var/configs/$STACK/"
     return 0
 }
 on_host() {
     local h="$1"; shift
-    rssh "$h" "cd '$(remote_repo)' && TOSSI_REMOTE=1 STACK='$STACK' DRYRUN='${DRYRUN:-}' VERBOSE='${VERBOSE:-}' automation/verbs/on_host.sh $(printf '%q ' "$@")"
+    rssh "$h" "cd '$(remote_repo)' && TOSSI_REMOTE=1 TOSSI_PRIMARY_TOP='$(dirname "$ROOT")' STACK='$STACK' DRYRUN='${DRYRUN:-}' VERBOSE='${VERBOSE:-}' automation/verbs/on_host.sh $(printf '%q ' "$@")"
 }
 
 component() {
@@ -202,6 +208,17 @@ core_settings() {
     esac
     CORE_AMF_ADDR="${CORE_AMF_ADDR:-$amf}"; CORE_UPF_ADDR="${CORE_UPF_ADDR:-${upf:-$CORE_AMF_ADDR}}"
     CORE_PLMN="${CORE_PLMN:-00101}"; CORE_TAC="${CORE_TAC:-1}"; CORE_SST="${CORE_SST:-1}"; CORE_SD="${CORE_SD-$sd}"
+}
+ue_settings() {
+    core_settings
+    local imsi="" key="" opc="" dnn=""
+    case "$CORE" in
+        oai-cn5g) imsi=001010000000001 key=fec86ba6eb707ed08905757b1bb44b8f opc=C42449363BBAD02B66D16BC975D77CC1 dnn=oai ;;
+        sd-core)  imsi=001010100000001 key=5122250214c33e723a5dd523fc145fc0 opc=981d464c7c52eb6e5036234984ad0bcf dnn=internet ;;
+    esac
+    UE_IMSI_BASE="${UE_IMSI_BASE:-$imsi}"; UE_KEY="${UE_KEY:-$key}"; UE_OPC="${UE_OPC:-$opc}"; UE_DNN="${UE_DNN:-$dnn}"
+    UE_SST="${UE_SST:-$CORE_SST}"
+    if [ "$CORE" = oai-cn5g ]; then UE_SD=""; else UE_SD="${UE_SD:-${CORE_SD:-}}"; fi
 }
 core_overlays() {
     core_settings
