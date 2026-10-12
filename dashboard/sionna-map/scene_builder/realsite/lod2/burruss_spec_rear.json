@@ -1,0 +1,14 @@
+{"plan": [-40, 52, -37, 37],
+ "sections": [
+  {"axis": "v", "at": 0, "from": -37, "to": 37},
+  {"axis": "v", "at": 14, "from": -37, "to": 37},
+  {"axis": "v", "at": 20, "from": -37, "to": 37},
+  {"axis": "v", "at": 30, "from": -37, "to": 37},
+  {"axis": "v", "at": 40, "from": -37, "to": 37},
+  {"axis": "v", "at": 47, "from": -37, "to": 37},
+  {"axis": "u", "at": 0, "from": -40, "to": 52},
+  {"axis": "u", "at": 10, "from": -40, "to": 52},
+  {"axis": "u", "at": -10, "from": -40, "to": 52},
+  {"axis": "u", "at": 26, "from": -40, "to": 52},
+  {"axis": "u", "at": -26, "from": -40, "to": 52}
+ ]}
