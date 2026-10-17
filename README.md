@@ -7,6 +7,8 @@ One platform to deploy, simulate and train every TOSSI RAN setup, from the comma
 - **Train** the AI-RAN models (BSR periodicity, UL MCS, predictive CSI, Slice-ML) from datasets the DU collects, then bring them into service through shadow mode.
 - **Operate** with LLM agents that can deploy, debug and train for you, behind an approval for anything that changes the system.
 
+![Platform overview](docs/img/platform-overview.png)
+
 Verbs are scripts, stacks are data: adding a new deployment is a conf file, not a new script.
 
 ```bash
@@ -25,6 +27,8 @@ make dashboard                  # the web UI: http://<host-ip>:8000
 
 The dashboard is a web front end over the same `make` targets you would run by hand.
 Anything you do with a button can also be done from the shell, and the two share their settings.
+
+![Detailed system architecture](docs/img/system-architecture.png)
 
 | Layer | Location | Role |
 |---|---|---|
@@ -166,6 +170,8 @@ The dashboard ranks servers against each stack's `NEEDS` (GPU, DPDK, NIC, hugepa
 
 ## Digital twin: Sionna RT
 
+![Digital twin engine: Sionna RT](docs/img/digital-twin-sionna-rt.png)
+
 1. **Scenario Builder**: draw an area on the 3D map, place up to two gNBs, towers, UEs and a UE route, then build the scene from Overture buildings (or a measured site model).
 2. **Ray trace** every cell and compute a **coverage** map. Build, trace and coverage run as jobs, one Sionna process at a time.
 3. **Simulation → Ray Trace**: pick a server where `sionna-rt-ocudu` has come up before and select **Run on <server>**.
@@ -179,6 +185,8 @@ Without a GPU, Sionna traces on the CPU through Dr.Jit LLVM, at roughly one seco
 Point the dashboard at the Python that has Sionna RT with `TOSSI_SIONNA_PYTHON` (default `~/sionna-rt-env/bin/python3`).
 
 ## ML: collect, train, run
+
+![AI-RAN model lifecycle](docs/img/ai-ran-model-lifecycle.png)
 
 The `ai-ran-*` stacks have an `ML_MODE` setting:
 
